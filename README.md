@@ -1,4 +1,4 @@
-Object detection training pipeline:
+# Object detection training pipeline:
 
 Step 1: The first step is to clean and prepare datasets as the folder structure below:
 
@@ -10,9 +10,35 @@ Step 1: The first step is to clean and prepare datasets as the folder structure 
 │   │   ├── train
 │   │   ├── val
 
-Step 2: for every dataset this folder is zipped and stored in S3 in that object category.
+Step 2: for every dataset this folder is zipped and stored in S3 in that object category. For every new round of training download all zip files, unzip them in a folder.
 
-Step 3: Use 
+Step 3: Use tools/data_utils/collect_all_folders.py to aggregate all above folder structures and copy them in one folder ready for training.
+
+Step 4: Choose appropriate model size and architecture. DO NOT FORGET TO CHANGE IMAGE AUGMENTATION parameters based on the application. The following is highly recommended:
+
+ 
+
+```
+data_aug = dict(
+    hsv_h=0.0138,
+    hsv_s=0.364,
+    hsv_v=0.364,
+    degrees=30,
+    translate=0.245,
+    scale=0.18,
+    shear=10,
+    flipud=0,
+    fliplr=0.5,
+    mosaic=0.95,
+    mixup=0.243,
+)
+```
+
+
+
+## Human detection:
+
+Download cleaned datasets from [here](https://appsignal-training-data.s3.us-east-1.amazonaws.com/cleaned_version_human/) and follow the above routine. 
 
 
 
