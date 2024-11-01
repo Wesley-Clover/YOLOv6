@@ -1,3 +1,23 @@
+Object detection training pipeline:
+
+Step 1: The first step is to clean and prepare datasets as the folder structure below:
+
+
+│   ├── images
+│   │   ├── train
+│   │   └── val
+│   ├── labels
+│   │   ├── train
+│   │   ├── val
+
+Step 2: for every dataset this folder is zipped and stored in S3 in that object category.
+
+Step 3: Use 
+
+
+
+
+
 <p align="center">
   <img src="assets/banner-YOLO.png" align="middle" width = "1000" />
 </p>
