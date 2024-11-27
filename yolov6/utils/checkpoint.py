@@ -41,6 +41,7 @@ def save_checkpoint(ckpt, is_best, save_dir, model_name=""):
     if is_best:
         best_filename = osp.join(save_dir, 'best_ckpt.pt')
         shutil.copyfile(filename, best_filename)
+    return filename
 
 
 def strip_optimizer(ckpt_dir, epoch):
