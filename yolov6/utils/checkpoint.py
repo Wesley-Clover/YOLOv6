@@ -34,6 +34,7 @@ def load_checkpoint(weights, map_location=None, inplace=True, fuse=True):
 
 def save_checkpoint(ckpt, is_best, save_dir, model_name=""):
     """ Save checkpoint to the disk."""
+    best_filename = None
     if not osp.exists(save_dir):
         os.makedirs(save_dir)
     filename = osp.join(save_dir, model_name + '.pt')
@@ -41,7 +42,7 @@ def save_checkpoint(ckpt, is_best, save_dir, model_name=""):
     if is_best:
         best_filename = osp.join(save_dir, 'best_ckpt.pt')
         shutil.copyfile(filename, best_filename)
-    return filename
+    return filename, best_filename
 
 
 def strip_optimizer(ckpt_dir, epoch):

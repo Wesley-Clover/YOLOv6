@@ -59,6 +59,7 @@ def get_args_parser(add_help=True):
     parser.add_argument('--height', type=int, default=None, help='image height of model input')
     parser.add_argument('--width', type=int, default=None, help='image width of model input')
     parser.add_argument('--cache-ram', action='store_true', help='whether to cache images into RAM to speed up training')
+    parser.add_argument('--save-checkpoints-every-n-epoch', default=0, type=int, help='save checkpoints every n epoch')
 
     # mlflow args
     parser.add_argument('--mlflow-project-name', type=str, default='person_detector', help='mlflow project name')
@@ -66,12 +67,12 @@ def get_args_parser(add_help=True):
     parser.add_argument('--mlflow-run-name', type=str, default=f"person-detector-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}", help='mlflow run name')
     parser.add_argument('--mlflow-run-description', type=str, default="Person detector training run", help='mlflow run description')
     parser.add_argument('--mlflow-model-registry-name', type=str, default="person_detector", help='mlflow model registry name')
-    parser.add_argument('--mlflow-tracking-uri', type=str, default=os.environ['MLFLOW_TRACKING_URI'], help='mlflow tracking uri')
-    parser.add_argument('--mlflow-tracking-username', type=str, default= os.environ['MLFLOW_TRACKING_USERNAME'], help='mlflow tracking username')
-    parser.add_argument('--mlflow-tracking-password', type=str, default=os.environ['MLFLOW_TRACKING_PASSWORD'], help='mlflow tracking password')
-    parser.add_argument('--mlflow-aws-access-key-id', type=str, default=os.environ['MLFLOW_AWS_ACCESS_KEY_ID'], help='mlflow aws access key id')
-    parser.add_argument('--mlflow-aws-secret-access-key', type=str, default=os.environ['MLFLOW_AWS_SECRET_ACCESS_KEY'], help='mlflow aws secret access key')
-    parser.add_argument('--mlflow-aws-default-region', type=str, default=os.environ['MLFLOW_AWS_DEFAULT_REGION'], help='mlflow aws default region')
+    parser.add_argument('--mlflow-tracking-uri', type=str, default=os.getenv('MLFLOW_TRACKING_URI'), help='mlflow tracking uri')
+    parser.add_argument('--mlflow-tracking-username', type=str, default= os.getenv('MLFLOW_TRACKING_USERNAME'), help='mlflow tracking username')
+    parser.add_argument('--mlflow-tracking-password', type=str, default=os.getenv('MLFLOW_TRACKING_PASSWORD'), help='mlflow tracking password')
+    parser.add_argument('--mlflow-aws-access-key-id', type=str, default=os.getenv('MLFLOW_AWS_ACCESS_KEY_ID'), help='mlflow aws access key id')
+    parser.add_argument('--mlflow-aws-secret-access-key', type=str, default=os.getenv('MLFLOW_AWS_SECRET_ACCESS_KEY'), help='mlflow aws secret access key')
+    parser.add_argument('--mlflow-aws-default-region', type=str, default=os.getenv('MLFLOW_AWS_DEFAULT_REGION'), help='mlflow aws default region')
 
     return parser
 
