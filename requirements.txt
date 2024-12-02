@@ -15,3 +15,8 @@ onnx>=1.10.0  # ONNX export
 onnx-simplifier>=0.3.6 # ONNX simplifier
 thop  # FLOPs computation
 # pytorch_quantization>=2.1.1
+mlflow>=2.17.2
+pynvml>=11.5.3
+torchinfo>=1.8.0
+psutil>=6.1.0
+boto3>=1.35.70

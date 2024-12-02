@@ -32,8 +32,19 @@ def save_yaml(data_dict, save_path):
 
 def write_tblog(tblogger, epoch, results, lrs, losses):
     """Display mAP and loss information to log."""
-    tblogger.add_scalar("val/mAP@0.5", results[0], epoch + 1)
-    tblogger.add_scalar("val/mAP@0.50:0.95", results[1], epoch + 1)
+    
+    tblogger.add_scalar("val/mAP@0.50:0.95", results[0], epoch + 1)
+    tblogger.add_scalar("val/mAP@0.5", results[1], epoch + 1)
+    tblogger.add_scalar("val/mAP@0.75", results[2], epoch + 1)
+    tblogger.add_scalar("val/mAP@0.50:0.95_small", results[3], epoch + 1)
+    tblogger.add_scalar("val/mAP@0.50:0.95_medium", results[4], epoch + 1)
+    tblogger.add_scalar("val/mAP@0.50:0.95_large", results[5], epoch + 1)
+    tblogger.add_scalar("val/mAR@0.50:0.95:maxDets1", results[6], epoch + 1)
+    tblogger.add_scalar("val/mAR@0.50:0.95:maxDets10", results[7], epoch + 1)
+    tblogger.add_scalar("val/mAR@0.50:0.95:maxDets100", results[8], epoch + 1)
+    tblogger.add_scalar("val/mAR@0.50:0.95_small", results[9], epoch + 1)
+    tblogger.add_scalar("val/mAR@0.50:0.95_medium", results[10], epoch + 1)
+    tblogger.add_scalar("val/mAR@0.50:0.95_large", results[11], epoch + 1)
 
     tblogger.add_scalar("train/iou_loss", losses[0], epoch + 1)
     tblogger.add_scalar("train/dist_focalloss", losses[1], epoch + 1)

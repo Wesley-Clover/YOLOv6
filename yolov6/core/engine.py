@@ -16,6 +16,9 @@ from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 
+import mlflow
+from torchinfo import summary
+
 import tools.eval as eval
 from yolov6.data.data_load import create_dataloader
 from yolov6.models.yolo import build_model
@@ -34,6 +37,16 @@ from yolov6.utils.RepOptimizer import extract_scales, RepVGGOptimizer
 from yolov6.utils.nms import xywh2xyxy
 from yolov6.utils.general import download_ckpt
 
+
+def flatten_dict(d, parent_key="", sep=" / "):
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
 
 class Trainer:
     def __init__(self, args, cfg, device):
@@ -73,6 +86,7 @@ class Trainer:
         self.ema = ModelEMA(model) if self.main_process else None
         # tensorboard
         self.tblogger = SummaryWriter(self.save_dir) if self.main_process else None
+        
         self.start_epoch = 0
         #resume
         if hasattr(self, "ckpt"):
@@ -111,6 +125,44 @@ class Trainer:
             self.loss_num += 1
             self.loss_info += ['cwd_loss']
 
+        self.init_mlflow()
+
+    def init_mlflow(self):
+        # print args
+
+        os.environ['AWS_ACCESS_KEY_ID'] = self.args.mlflow_aws_access_key_id
+        os.environ['AWS_SECRET_ACCESS_KEY'] = self.args.mlflow_aws_secret_access_key
+        os.environ['AWS_DEFAULT_REGION'] = self.args.mlflow_aws_default_region
+
+        os.environ['MLFLOW_TRACKING_URI'] = self.args.mlflow_tracking_uri
+        os.environ['MLFLOW_TRACKING_USERNAME'] = self.args.mlflow_tracking_username
+        os.environ['MLFLOW_TRACKING_PASSWORD'] = self.args.mlflow_tracking_password
+
+        # mlflow
+        mlflow.set_tracking_uri(self.args.mlflow_tracking_uri)
+        mlflow.set_experiment(self.args.mlflow_experiment_name)
+        mlflow.start_run(
+            run_name=self.args.mlflow_run_name,
+            description=self.args.mlflow_run_description,
+            log_system_metrics=True,
+            tags={
+                "project": self.args.mlflow_project_name,
+            },
+        )
+        mlflow.log_params(
+            flatten_dict(
+                {"args": vars(self.args), "cfg": dict(self.cfg._cfg_dict), "data": self.data_dict}
+            )
+        )
+        mlflow.log_artifact(self.args.data_path, artifact_path="configs")
+        mlflow.log_artifact(self.args.conf_file, artifact_path="configs")
+
+        model = deepcopy(de_parallel(self.model)).half()
+        # mlflow - Log model summary.
+        with open("model_summary.txt", "w") as f:
+            f.write(str(summary(model)))
+        mlflow.log_artifact("model_summary.txt")
+        os.remove("model_summary.txt")
 
     # Training Process
     def train(self):
@@ -201,15 +253,24 @@ class Trainer:
 
             save_ckpt_dir = osp.join(self.save_dir, 'weights')
             save_checkpoint(ckpt, (is_val_epoch) and (self.ap == self.best_ap), save_ckpt_dir, model_name='last_ckpt')
+            
             if self.epoch >= self.max_epoch - self.args.save_ckpt_on_last_n_epoch:
                 save_checkpoint(ckpt, False, save_ckpt_dir, model_name=f'{self.epoch}_ckpt')
+            
+            try:
+                if self.epoch % self.args.save_checkpoints_every_n_epoch == 0:
+                    save_checkpoint(ckpt, False, save_ckpt_dir, model_name=f'{self.epoch}_ckpt')
+                    # mlflow
+                    mlflow.log_artifact(osp.join(save_ckpt_dir, f'{self.epoch}_ckpt.pt'), artifact_path="checkpoints")
+            except ZeroDivisionError:
+                pass # this is because save_checkpoints_every_n_epoch is 0
 
             #default save best ap ckpt in stop strong aug epochs
             if self.epoch >= self.max_epoch - self.args.stop_aug_last_n_epoch:
                 if self.best_stop_strong_aug_ap < self.ap:
                     self.best_stop_strong_aug_ap = max(self.ap, self.best_stop_strong_aug_ap)
                     save_checkpoint(ckpt, False, save_ckpt_dir, model_name='best_stop_aug_ckpt')
-
+                    
             del ckpt
 
             self.evaluate_results = list(self.evaluate_results)
@@ -218,6 +279,39 @@ class Trainer:
             write_tblog(self.tblogger, self.epoch, self.evaluate_results, lrs_of_this_epoch, self.mean_loss)
             # save validation predictions to tensorboard
             write_tbimg(self.tblogger, self.vis_imgs_list, self.epoch, type='val')
+           
+            # mlflow
+            mlflow.log_metrics(
+                metrics=flatten_dict(
+                    {  # Same metrics and structes as the write_tblog function
+                        "loss": {
+                            "iou": self.mean_loss[0],
+                            "dfl": self.mean_loss[1],
+                            "cls": self.mean_loss[2],
+                        },
+                        "lr": {
+                            "0": lrs_of_this_epoch[0],
+                            "1": lrs_of_this_epoch[1],
+                            "2": lrs_of_this_epoch[2],
+                        },
+                        "val": {
+                            "mAP_0.50-0.95": self.evaluate_results[0],
+                            "mAP_0.50": self.evaluate_results[1],
+                            "mAP_0.75": self.evaluate_results[2],
+                            "mAP_0.50-0.95_small": self.evaluate_results[3],
+                            "mAP_0.50-0.95_medium": self.evaluate_results[4],
+                            "mAP_0.50-0.95_large": self.evaluate_results[5],
+                            "mAR_0.50-0.95_maxDets-1": self.evaluate_results[6],
+                            "mAR_0.50-0.95_maxDets-10": self.evaluate_results[7],
+                            "mAR_0.50-0.95_maxDets-100": self.evaluate_results[8],
+                            "mAR_0.50-0.95_small": self.evaluate_results[9],
+                            "mAR_0.50-0.95_medium": self.evaluate_results[10],
+                            "mAR_0.50-0.95_large": self.evaluate_results[11]  
+                        },
+                    }
+                ),
+                step=self.epoch,
+            )
 
     def eval_model(self):
         if not hasattr(self.cfg, "eval_params"):
@@ -263,8 +357,8 @@ class Trainer:
                             width=self.width
                             )
 
-        LOGGER.info(f"Epoch: {self.epoch} | mAP@0.5: {results[0]} | mAP@0.50:0.95: {results[1]}")
-        self.evaluate_results = results[:2]
+        LOGGER.info(f"Epoch: {self.epoch} | mAP@0.50:0.95: {results[0]} | mAP@0.5: {results[1]}")
+        self.evaluate_results = results
         # plot validation predictions
         self.plot_val_pred(vis_outputs, vis_paths)
 
@@ -279,7 +373,7 @@ class Trainer:
 
         self.best_ap, self.ap = 0.0, 0.0
         self.best_stop_strong_aug_ap = 0.0
-        self.evaluate_results = (0, 0) # AP50, AP50_95
+        self.evaluate_results = tuple([0.0]*12) # AP50_95, AP50, ...
         # resume results
         if hasattr(self, "ckpt"):
             self.evaluate_results = self.ckpt['results']
@@ -352,10 +446,33 @@ class Trainer:
             save_ckpt_dir = osp.join(self.save_dir, 'weights')
             strip_optimizer(save_ckpt_dir, self.epoch)  # strip optimizers for saved pt model
 
+        
     # Empty cache if training finished
     def train_after_loop(self):
         if self.device != 'cpu':
             torch.cuda.empty_cache()
+        
+        # mlflow - Log checkpoints
+        for filename in os.listdir(os.path.join(self.save_dir, 'weights')):
+            if filename.endswith('.pt'):
+                mlflow.log_artifact(os.path.join(self.save_dir, 'weights', filename), artifact_path="checkpoints")
+
+        # mlflow
+        model = deepcopy(de_parallel(self.model)).half()
+        mlflow.pytorch.log_model(
+            model,
+            registered_model_name=self.args.mlflow_model_registry_name,
+            signature=False,
+            # This line causes too long warning, so signature disabled input_example=self.batch_data[0].unsqueeze(0).cpu().numpy(),
+            artifact_path="model",
+        )
+
+        # mlflow - Log tensorboard logs
+        for file_name in os.listdir(self.tblogger.log_dir):
+            if file_name.startswith("events.out.tfevents"):
+                tfevents_file = os.path.join(self.tblogger.log_dir, file_name)
+                mlflow.log_artifact(tfevents_file, artifact_path="logs")
+        
 
     def update_optimizer(self):
         curr_step = self.step + self.max_stepnum * self.epoch

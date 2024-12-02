@@ -317,8 +317,8 @@ class Evaler:
             model.float()  # for training
             if task != 'train':
                 LOGGER.info(f"Results saved to {self.save_dir}")
-            return (map50, map)
-        return (0.0, 0.0)
+            return cocoEval.stats
+        return tuple([0.0]*12) # cocoEval.stats has 12 value
 
     def eval_speed(self, task):
         '''Evaluate model inference speed.'''
