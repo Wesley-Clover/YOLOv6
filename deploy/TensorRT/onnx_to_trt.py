@@ -144,7 +144,7 @@ def main():
         help='whether the onnx model is qat; if it is, the int8 calibrator is not needed')
     # If enable int8(not post-QAT model), then set the following
     parser.add_argument('--img-size', nargs='+', type=int,
-                        default=[640, 640], help='image size of model input, the order is: height width')
+                        default=[480, 832], help='image size of model input, the order is: height width')
     parser.add_argument('--batch-size', type=int,
                         default=128, help='batch size for training: default 64')
     parser.add_argument('--num-calib-batch', default=6, type=int,
