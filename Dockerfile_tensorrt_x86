@@ -1,0 +1,45 @@
+ARG TAG=24.01-py3
+
+FROM nvcr.io/nvidia/tensorrt:${TAG} AS tensorrt_container
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# Basic tools
+RUN apt update && apt-get install -y --fix-missing --no-install-recommends \
+    sudo \
+    wget \
+    curl \
+    git \
+    ca-certificates \
+    ninja-build \
+    tzdata \
+    pkg-config \
+    gdb \
+    libglib2.0-dev \
+    libmount-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python packages
+RUN pip install --no-cache-dir \
+    yapf \
+    isort \
+    cmake-format \
+    pre-commit \
+    && pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
+    && pip3 install onnx \
+    && pip3 install requests
+
+# Override older cmake
+RUN find /usr/local/share -type d -name "cmake-*" -exec rm -rf {} + \
+    && curl -fsSL "https://github.com/Kitware/CMake/releases/download/v3.29.0/cmake-3.29.0-linux-x86_64.sh" \
+    -o cmake.sh \
+    && bash cmake.sh --skip-license --exclude-subdir --prefix=/usr/local \
+    && rm cmake.sh
+
+# Install OpenCV
+RUN apt update && apt-get install -y \
+    libopencv-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+COPY . /workspace/Yolov6
