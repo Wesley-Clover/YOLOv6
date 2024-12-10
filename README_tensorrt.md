@@ -155,7 +155,7 @@ After successful build, the executable will be available in the build directory.
 After building the application, you can run it with the following syntax:
 
 ```bash
-./yolov6_edgesignal <engine_file> -i <input_image> | -v <video_path> [options]
+./yolov6 <engine_file> -i <input_image> | -v <video_path> [options]
 ```
 
 Examples:
@@ -163,25 +163,25 @@ Examples:
 1. Process a single image:
 ```bash
 # Display result
-./yolov6_edgesignal model/best_stop_aug_ckpt.trt -i test_images/test.jpg
+./yolov6 model/best_stop_aug_ckpt.trt -i test_images/test.jpg
 
 # Process without displaying
-./yolov6_edgesignal model/best_stop_aug_ckpt.trt -i test_images/test.jpg --no-display
+./yolov6 model/best_stop_aug_ckpt.trt -i test_images/test.jpg --no-display
 ```
 
 2. Process a video:
 ```bash
 # Display result
-./yolov6_edgesignal model/best_stop_aug_ckpt.trt -v test_videos/test.mp4
+./yolov6 model/best_stop_aug_ckpt.trt -v test_videos/test.mp4
 
 # Save processed video
-./yolov6_edgesignal model/best_stop_aug_ckpt.trt -v test_videos/test.mp4 --save-video output.avi
+./yolov6 model/best_stop_aug_ckpt.trt -v test_videos/test.mp4 --save-video output.avi
 
 # Process without displaying
-./yolov6_edgesignal model/best_stop_aug_ckpt.trt -v test_videos/test.mp4 --no-display
+./yolov6 model/best_stop_aug_ckpt.trt -v test_videos/test.mp4 --no-display
 
 # Process with all options
-./yolov6_edgesignal model/best_stop_aug_ckpt.trt -v test_videos/test.mp4 \
+./yolov6 model/best_stop_aug_ckpt.trt -v test_videos/test.mp4 \
     --show-processing-fps \
     --show-average-fps \
     --save-video output.avi
