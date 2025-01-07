@@ -2,13 +2,14 @@
 
 Step 1: The first step is to clean and prepare datasets as the folder structure below:
 
-
+```
 │   ├── images
 │   │   ├── train
 │   │   └── val
 │   ├── labels
 │   │   ├── train
 │   │   ├── val
+```
 
 Step 2: for every dataset this folder is zipped and stored in S3 in that object category. For every new round of training download all zip files, unzip them in a folder.
 
@@ -38,7 +39,8 @@ data_aug = dict(
 
 ## Human detection:
 
-Download cleaned datasets from [here](https://appsignal-training-data.s3.us-east-1.amazonaws.com/cleaned_version_human/) and follow the above routine. 
+Run chmod +x MG_Aug_settings_trainer_bash.sh to give permission and then ./MG_Aug_settings_trainer_bash.sh 
+
 
 
 
