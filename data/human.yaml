@@ -1,0 +1,10 @@
+# Please change the following paths based on s3 links
+train: /home/jupyter/data/human_detection/training_sets/images/train # train images
+val: /home/jupyter/data/human_detection/training_sets/images/val # train images
+
+# whether it is coco dataset, only coco dataset should be set to True.
+is_coco: False
+
+# Classes
+nc: 1  # number of classes
+names: ['human']
