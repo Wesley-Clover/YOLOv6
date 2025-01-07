@@ -39,7 +39,7 @@ data_aug = dict(
 
 ## Human detection:
 
-Run chmod +x MG_Aug_settings_trainer_bash.sh to give permission and then ./MG_Aug_settings_trainer_bash.sh 
+Run chmod +x human_yolov6_trainer_bash.sh to give permission and then ./human_yolov6_trainer_bash.sh 
 
 
 
